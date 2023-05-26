@@ -18,6 +18,7 @@ if [ "${1}" = "modules" ]; then
   fi
   [ -e /proc/sys/kernel/hotplug ] && printf '\000\000\000\000' > /proc/sys/kernel/hotplug
   chmod 755 /usr/sbin/udevd /usr/bin/kmod /usr/bin/udevadm /usr/lib/udev/*
+  /usr/sbin/depmod -a
   /usr/sbin/udevd -d || { echo "FAIL"; exit 1; }
   echo "Triggering add events to udev"
   udevadm trigger --type=subsystems --action=add
@@ -30,6 +31,11 @@ if [ "${1}" = "modules" ]; then
   /usr/bin/killall udevd
 elif [ "${1}" = "late" ]; then
   echo "Starting eudev daemon - late"
+  #copy modules
+  cp -rf /usr/lib/modules/* /tmpRoot/usr/lib/modules/
+  cp -rf /usr/lib/firmware/* /tmpRoot/usr/lib/firmware/
+  /usr/sbin/depmod -a -b /tmpRoot/
+  
   # Copy rules
   cp -vf /usr/lib/udev/rules.d/* /tmpRoot/usr/lib/udev/rules.d/
   if [ "${MajorVersion}" -lt "7" ]; then # < 7
